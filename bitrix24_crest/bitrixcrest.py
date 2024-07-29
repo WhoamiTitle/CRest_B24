@@ -3,8 +3,8 @@ import json
 import functools
 import logging
 import requests
-from bitrix24_crest.http_requests import send_http_post_request
-import bitrix24_crest.settings as settings
+from .http_requests import send_http_post_request
+from .settings import C_REST_WEB_HOOK_URL, C_REST_CLIENT_SECRET,C_REST_CLIENT_ID
 
 
 # Настройка логирования
@@ -59,9 +59,9 @@ class BitrixCrest:
     TYPE_TRANSPORT = 'json'
 
     def __init__(self):
-        self.C_REST_WEB_HOOK_URL = settings.C_REST_WEB_HOOK_URL
-        self.C_REST_CLIENT_ID = settings.C_REST_CLIENT_ID
-        self.C_REST_CLIENT_SECRET = settings.C_REST_CLIENT_SECRET
+        self.C_REST_WEB_HOOK_URL = C_REST_WEB_HOOK_URL
+        self.C_REST_CLIENT_ID = C_REST_CLIENT_ID
+        self.C_REST_CLIENT_SECRET = C_REST_CLIENT_SECRET
         self.settings_file = os.path.join(os.path.dirname(__file__), 'settings.json')
 
     def get_app_settings(self):

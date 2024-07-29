@@ -1,14 +1,21 @@
+import os
+import sys
 import json
-from bitrix24_crest.bitrixcrest import BitrixCrest
+
+# Получаем путь к корневой директории проекта
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+from bitrix24_crest import BitrixCrest
+
 def main():
     crest = BitrixCrest()
     
     # Данные для нового контакта
     new_contact_data = {
         'FIELDS': {
-            "NAME": "Владsслав",
+            "NAME": "Илья",
             "LAST_NAME": "Петров",
-
             "PHONE": [
                 {
                     "VALUE": "555888",
@@ -17,7 +24,7 @@ def main():
             ],
             "EMAIL": [
                 {
-                    "VALUE": "inosdfv123@example.com",
+                    "VALUE": "in78sdfv123@example.com",
                     "VALUE_TYPE": "WORK"
                 }
             ]
