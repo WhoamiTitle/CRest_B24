@@ -10,6 +10,9 @@ def send_http_post_request(url: str, json_data: dict):
     """
     try:
         response = requests.post(url, json=json_data)
+        if response.status_code == 302:
+            new_url = response.headers['Location']
+            response = requests.post(new_url, json=json_data)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
