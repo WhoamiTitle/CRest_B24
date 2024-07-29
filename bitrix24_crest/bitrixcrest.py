@@ -48,8 +48,21 @@ def auto_refresh_token():
                 return result
             except ExceptionCallError as error:
                 raise error
+            except requests.HTTPError as http_err:
+                if http_err.response.status_code == 401:
+                    logger.error(f"Получен статус 401, пытаемся обновить токен")
+                    # Вызов функции обновления токена
+                    auth_result = func.__self__.get_new_auth(*args, **kwargs)
+                    if "error" not in auth_result:
+                        result = func(*args, **kwargs)
+                    else:
+                        raise ExceptionCallError(error="failed_to_refresh_token")
+                    return result
+                else:
+                    logger.error(f"Ошибка HTTP: {http_err}")
+                    raise ExceptionCallError(error="undefined")
             except Exception as error:
-                logger.error(f"Ошибка при выполнении декоратора auto_refresh_token. Аргументы: {args}, Ключевые слова: {kwargs}, Ошибка: {error}")
+                logger.error(f"Ошибка при выполнении декоратора auto_refresh_token")
                 raise ExceptionCallError(error="undefined")
         return inner
     return wrapper
