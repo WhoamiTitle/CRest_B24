@@ -135,6 +135,7 @@ class BitrixCrest:
             app_settings.update(old_data)
         return self.set_setting_data(app_settings)
 
+
     @error_catcher("call")
     @auto_refresh_token()
     def call(self, method, params=None, this_auth=False):
