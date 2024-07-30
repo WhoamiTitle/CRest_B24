@@ -1,3 +1,6 @@
-C_REST_CLIENT_ID = ' '
-C_REST_CLIENT_SECRET = ' '
-C_REST_WEB_HOOK_URL = ' '
+C_REST_CLIENT_ID = ''
+C_REST_CLIENT_SECRET = ''
+C_REST_WEB_HOOK_URL = ''
+
+
+LOG_PATH='./log/log.json'

@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from check_server import check_settings
 
+check_settings()
 
 app = FastAPI()
 
