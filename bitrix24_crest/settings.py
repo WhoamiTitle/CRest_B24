@@ -1,6 +1,6 @@
 C_REST_CLIENT_ID = ''
 C_REST_CLIENT_SECRET = ''
 C_REST_WEB_HOOK_URL = ''
-
+BACKEND_CORS_ORIGINS = 'http://localhost:8000'
 
 LOG_PATH='./log/log.json'

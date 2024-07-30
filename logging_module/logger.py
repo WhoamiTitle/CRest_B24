@@ -1,6 +1,6 @@
 import logging
 from logging.handlers import RotatingFileHandler
-from bitrix24_crest.settings import LOG_PATH
+from bitrix24_crest import settings
 
 def setup_logger_json(name, filename, level=logging.DEBUG):
     formatter = logging.Formatter('%(message)s')
@@ -11,4 +11,4 @@ def setup_logger_json(name, filename, level=logging.DEBUG):
     logger.addHandler(handler)
     return logger
 
-json_logger = setup_logger_json("json", LOG_PATH)
+json_logger = setup_logger_json("json", settings.LOG_PATH)
