@@ -5,7 +5,8 @@ import logging
 import requests
 from .http_requests import send_http_post_request
 from .settings import C_REST_WEB_HOOK_URL, C_REST_CLIENT_SECRET,C_REST_CLIENT_ID
-
+from logging_module.logging_utility import log
+from logging_module.schemes import LogMessage, log_en
 
 # Настройка логирования
 logging.basicConfig(level=logging.ERROR)
@@ -21,14 +22,31 @@ def error_catcher(name: str):
             try:
                 result = func(*args, **kwargs)
                 if "error" in result:
-                    logger.error(f"Ошибка при выполнении декоратора error_catcher, name: {name}. Аргументы: {args}, Ключевые слова: {kwargs}, Результат: {result}")
+                    error_message = f"Ошибка при выполнении декоратора error_catcher, name: {name}. Аргументы: {args}, Ключевые слова: {kwargs}, Результат: {result}"
+                    logger.error(error_message)
+                    log(LogMessage(
+                        time=None,
+                        heder="Ошибка при выполнении вызова",
+                        heder_dict={"name": name, "args": args, "kwargs": kwargs},
+                        body={"result": result},
+                        level=log_en.ERROR
+                    ))
                     raise ExceptionCallError(error=result["error"])
-                return result
+                return result   
             except ExceptionCallError as error:
-                raise error
+                raise error      
             except Exception as error:
-                logger.error(f"Ошибка при выполнении декоратора error_catcher, name: {name}. Аргументы: {args}, Ключевые слова: {kwargs}, Ошибка: {error}")
+                error_message = f"Ошибка при выполнении декоратора error_catcher, name: {name}. Аргументы: {args}, Ключевые слова: {kwargs}, Ошибка: {error}"
+                logger.error(error_message)
+                log(LogMessage(
+                    time=None,
+                    heder="Неизвестная ошибка при выполнении вызова",
+                    heder_dict={"name": name, "args": args, "kwargs": kwargs},
+                    body={"error": str(error)},
+                    level=log_en.ERROR
+                ))
                 raise ExceptionCallError(error="undefined")
+            
         return inner
     return wrapper
 
@@ -46,11 +64,20 @@ def auto_refresh_token():
                     else:
                         raise ExceptionCallError(error="failed_to_refresh_token")
                 return result
+            
             except ExceptionCallError as error:
                 raise error
+            
             except requests.HTTPError as http_err:
                 if http_err.response.status_code == 401:
                     logger.error(f"Получен статус 401, пытаемся обновить токен")
+                    log(LogMessage(
+                        time=None,
+                        heder="Получен статус 401, пытаемся обновить токен",
+                        heder_dict={"args": args, "kwargs": kwargs},
+                        body={"error": str(http_err)},
+                        level=log_en.ERROR
+                    ))                    
                     # Вызов функции обновления токена
                     auth_result = func.__self__.get_new_auth(*args, **kwargs)
                     if "error" not in auth_result:
@@ -61,10 +88,20 @@ def auto_refresh_token():
                 else:
                     logger.error(f"Ошибка HTTP: {http_err}")
                     raise ExceptionCallError(error="undefined")
+            
             except Exception as error:
                 logger.error(f"Ошибка при выполнении декоратора auto_refresh_token")
+                log(LogMessage(
+                    time=None,
+                    heder="Неизвестная ошибка при выполнении вызова",
+                    heder_dict={"args": args, "kwargs": kwargs},
+                    body={"error": str(error)},
+                    level=log_en.ERROR
+                ))
                 raise ExceptionCallError(error="undefined")
+        
         return inner
+    
     return wrapper
 
 class BitrixCrest:
@@ -103,7 +140,15 @@ class BitrixCrest:
     def call(self, method, params=None, this_auth=False):
         app_settings = self.get_app_settings()
         if not app_settings:
-            logger.error('No application settings found.')
+            error_message = 'No application settings found.'
+            logger.error(error_message)
+            log(LogMessage(
+                time=None,
+                heder="Ошибка вызова",
+                heder_dict={"method": method, "params": params, "this_auth": this_auth},
+                body={"error": error_message},
+                level=log_en.ERROR
+            ))
             return {'error': 'no_install_app', 'error_information': 'error install app, pls install local application'}
 
         if this_auth:
@@ -114,8 +159,25 @@ class BitrixCrest:
                 if params is None:
                     params = {}
                 params['auth'] = app_settings['access_token']
-
-        return send_http_post_request(url, params)
+        try:
+            result = send_http_post_request(url, params)
+            log(LogMessage(
+                time=None,
+                heder="Успешный вызов метода",
+                heder_dict={"method": method, "params": params, "url": url},
+                body={"result": result},
+                level=log_en.INFO
+            ))
+            return result
+        except Exception as error:
+            log(LogMessage(
+                time=None,
+                heder="Ошибка при вызове метода",
+                heder_dict={"method": method, "params": params, "url": url},
+                body={"error": str(error)},
+                level=log_en.ERROR
+            ))
+            raise error
 
     @error_catcher("get_new_auth")
     @auto_refresh_token()
@@ -149,5 +211,12 @@ class BitrixCrest:
                         ar_data_rest['cmd'][key] += '?' + requests.compat.urlencode(data['params'])
             if ar_data_rest['cmd']:
                 ar_data_rest['halt'] = halt
+                log(LogMessage(
+                    time=None,
+                    heder="Вызов batch метода",
+                    heder_dict={"ar_data_rest": ar_data_rest},
+                    body=None,
+                    level=log_en.INFO
+                ))
                 return self.call('batch', ar_data_rest)
         return {}
