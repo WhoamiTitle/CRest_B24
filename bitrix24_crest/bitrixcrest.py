@@ -1,16 +1,18 @@
-import os
+
 import json
 import functools
-import logging
 import requests
+
+
+
 from .http_requests import send_http_post_request
 from .settings import C_REST_WEB_HOOK_URL, C_REST_CLIENT_SECRET,C_REST_CLIENT_ID
+
+
 from logging_module.logging_utility import log
 from logging_module.schemes import LogMessage, log_en
 
-# Настройка логирования
-logging.basicConfig(level=logging.ERROR)
-logger = logging.getLogger(__name__)
+
 
 class ExceptionCallError(Exception):
     error: str
@@ -23,7 +25,6 @@ def error_catcher(name: str):
                 result = func(*args, **kwargs)
                 if "error" in result:
                     error_message = f"Ошибка при выполнении декоратора error_catcher, name: {name}. Аргументы: {args}, Ключевые слова: {kwargs}, Результат: {result}"
-                    logger.error(error_message)
                     log(LogMessage(
                         time=None,
                         heder="Ошибка при выполнении вызова",
@@ -37,7 +38,6 @@ def error_catcher(name: str):
                 raise error      
             except Exception as error:
                 error_message = f"Ошибка при выполнении декоратора error_catcher, name: {name}. Аргументы: {args}, Ключевые слова: {kwargs}, Ошибка: {error}"
-                logger.error(error_message)
                 log(LogMessage(
                     time=None,
                     heder="Неизвестная ошибка при выполнении вызова",
@@ -70,7 +70,6 @@ def auto_refresh_token():
             
             except requests.HTTPError as http_err:
                 if http_err.response.status_code == 401:
-                    logger.error(f"Получен статус 401, пытаемся обновить токен")
                     log(LogMessage(
                         time=None,
                         heder="Получен статус 401, пытаемся обновить токен",
@@ -86,11 +85,9 @@ def auto_refresh_token():
                         raise ExceptionCallError(error="failed_to_refresh_token")
                     return result
                 else:
-                    logger.error(f"Ошибка HTTP: {http_err}")
                     raise ExceptionCallError(error="undefined")
             
             except Exception as error:
-                logger.error(f"Ошибка при выполнении декоратора auto_refresh_token")
                 log(LogMessage(
                     time=None,
                     heder="Неизвестная ошибка при выполнении вызова",
@@ -142,7 +139,6 @@ class BitrixCrest:
         app_settings = self.get_app_settings()
         if not app_settings:
             error_message = 'No application settings found.'
-            logger.error(error_message)
             log(LogMessage(
                 time=None,
                 heder="Ошибка вызова",
@@ -221,3 +217,70 @@ class BitrixCrest:
                 ))
                 return self.call('batch', ar_data_rest)
         return {}
+    
+    async def get_list(self, method: str, params: dict = None) -> list:
+
+        if params is None:
+            params = {}
+
+        # Установка по умолчанию 
+        if "order" not in params:
+            params["order"] = {"ID": "ASC"}
+        else:
+            if "ID" not in params["order"]:
+                params["order"]["ID"] = "ASC"
+
+        # Определение направления сортировки 
+        is_id_order_normal = params["order"]["ID"] != "DESC"
+        params["start"] = -1
+        result = []
+        last_id = None
+
+        try:
+            while True:
+                params_copy = params.copy()
+                if last_id:
+                    filter_key = f"{'>' if is_id_order_normal else '<'}ID"
+                    if "filter" in params_copy:
+                        params_copy["filter"][filter_key] = str(last_id)
+                    else:
+                        params_copy["filter"] = {filter_key: str(last_id)}
+
+                response = await self.call(method, params_copy)
+                
+                if 'error' in response:
+                    log(LogMessage(
+                        time=None,
+                        heder="Ошибка при получении списка",
+                        heder_dict={"method": method, "params": params_copy},
+                        body={"error": response["error"]},
+                        level=log_en.ERROR
+                    ))
+                    break
+
+                result.extend(response["result"])
+
+                if len(response["result"]) == 0:
+                    break
+
+                last_id = int(response["result"][-1]["ID"])
+
+            log(LogMessage(
+                time=None,
+                heder="Успешное получение списка",
+                heder_dict={"method": method, "params": params},
+                body={"result": result},
+                level=log_en.INFO
+            ))
+            
+        except Exception as e:
+            log(LogMessage(
+                time=None,
+                heder="Ошибка при вызове метода get_list",
+                heder_dict={"method": method, "params": params},
+                body={"error": str(e)},
+                level=log_en.ERROR
+            ))
+            raise e
+
+        return result

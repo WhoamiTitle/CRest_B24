@@ -1,70 +1,33 @@
 async def add_test_contacts(bitrix):
-    res = await bitrix.call("crm.contact.add",
-                            {
-                                "FIELDS": {
-                                    "NAME": "Иван",
-                                    "LAST_NAME": "Петров",
-                                    "EMAIL": [
-                                        {
-                                            "VALUE": "mail@example.com",
-                                            "VALUE_TYPE": "WORK"
-                                        }
-                                    ],
-                                    "PHONE": [
-                                        {
-                                            "VALUE": "555888",
-                                            "VALUE_TYPE": "WORK"
-                                        }
-                                    ]
-                                }
-                            })
+    num_contacts = 46
+    contact_requests = []
 
-    res1 = await bitrix.call_batch(
-        [
-            {
-                "method": "crm.contact.add",
-                "params": {
-                    "FIELDS": {
-                        "NAME": "Иван1",
-                        "LAST_NAME": "Петров1"
-                    }
-                }
-            },
-            {
-                "method": "crm.contact.add",
-                "params": {
-                    "FIELDS": {
-                        "NAME": "Иван2",
-                        "LAST_NAME": "Петров2"
-                    }
+    for i in range(num_contacts):
+        contact_request = {
+            "method": "crm.contact.add",
+            "params": {
+                "FIELDS": {
+                    "NAME": f"Vitalic{i}",
+                    "LAST_NAME": f"Vitalevich{i}"
                 }
             }
-        ])
+        }
+        contact_requests.append(contact_request)
 
-    arr = []
-    for i in range(46):
-        arr.append(
-            {
-                "method": "crm.contact.add",
-                "params": {
-                    "FIELDS": {
-                        "NAME": f"Иван{i}",
-                        "LAST_NAME": f"Петров{i}"
-                    }
-                }
-            }
-        )
+    incorrect_request_index = 10
+    incorrect_request = {
+        "method": "crm.contact.add",
+        "params": {
+            "FIELDS": "NAME"
+        }
+    }
+    contact_requests.insert(incorrect_request_index, incorrect_request)
 
-    arr.insert(10,
-               {
-                   "method": "crm.contact.add",
-                   "params": {
-                       "FIELDS": "NAME"
-                   }
-               }
-               )
-    res2 = await bitrix.call_batch(arr, True)
+    
+    batch_response = await bitrix.call_batch(contact_requests, halt=True)
 
-    res3 = await bitrix.call("crm.contact.list")
+    
+    contact_list_response = await bitrix.get_list("crm.contact.list")
 
-    return {"res": res, "res1": res1, "res2": res2, "res3": res3}
+    return {"batch_response": batch_response, "contact_list_response": contact_list_response}
+    # return {"batch_response": batch_response}
