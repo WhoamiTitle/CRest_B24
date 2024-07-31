@@ -6,6 +6,7 @@ import os
 
 
 from .http_requests import send_http_post_request
+from .сall_parameters_encoder import call_parameters_encoder
 from .settings import C_REST_WEB_HOOK_URL, C_REST_CLIENT_SECRET,C_REST_CLIENT_ID
 
 
@@ -205,7 +206,7 @@ class BitrixCrest:
                     i += 1
                     ar_data_rest['cmd'][key] = data['method']
                     if 'params' in data:
-                        ar_data_rest['cmd'][key] += '?' + requests.compat.urlencode(data['params'])
+                        ar_data_rest['cmd'][key] += '?' + call_parameters_encoder(data['params'])
             if ar_data_rest['cmd']:
                 ar_data_rest['halt'] = halt
                 log(LogMessage(
@@ -218,7 +219,7 @@ class BitrixCrest:
                 return self.call('batch', ar_data_rest)
         return {}
     
-    async def get_list(self, method: str, params: dict = None) -> list:
+    def get_list(self, method: str, params: dict = None) -> list:
 
         if params is None:
             params = {}
@@ -246,7 +247,7 @@ class BitrixCrest:
                     else:
                         params_copy["filter"] = {filter_key: str(last_id)}
 
-                response = await self.call(method, params_copy)
+                response = self.call(method, params_copy)
                 
                 if 'error' in response:
                     log(LogMessage(

@@ -144,7 +144,7 @@ async def index_post(DOMAIN: str, PROTOCOL: int, LANG: str, APP_SID: str, reques
 
     bitrix = BitrixCrest()
     results = await add_test_contacts(bitrix)
-    print(results)
+    
     return """
     <head>
         <script src="//api.bitrix24.com/api/v1/"></script>

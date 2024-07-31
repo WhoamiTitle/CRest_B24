@@ -1,12 +1,11 @@
-import os
 import sys
-import json
+import os
 
-# Получаем путь к корневой директории проекта
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-from bitrix24_crest import BitrixCrest
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
+import json
+from bitrix24_crest.bitrixcrest import BitrixCrest
 
 def main():
     crest = BitrixCrest()
