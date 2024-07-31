@@ -1,16 +1,20 @@
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import FastAPI, APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from bitrix24_crest import settings
+
 from check_server import check_settings
 from logging_module.logging_utility import log
 from logging_module.schemes import LogMessage, log_en
+
+from bitrix24_crest import settings
 from bitrix24_crest.bitrixcrest import BitrixCrest
+from bitrix24_crest.сall_parameters_decoder import decode_body_request, call_parameters_decoder
+
 from tests.test_data import add_test_contacts
 import datetime
-
+from typing import Union
 
 check_settings()
 
@@ -75,8 +79,8 @@ async def index_head():
 
 
 @router.post("/install", response_class=HTMLResponse)
-async def install_post(DOMAIN: str, PROTOCOL: int, LANG: str, APP_SID: str, request: Request):
-    auth_dict = await request.json()
+async def install_post(DOMAIN: str, PROTOCOL: int, LANG: str, APP_SID: str, request: Request, body: Union[dict, None] = Depends(decode_body_request)):
+    auth_dict = body
     
     bitrix = BitrixCrest()
     bitrix.set_app_settings({
@@ -121,9 +125,9 @@ async def install_post(DOMAIN: str, PROTOCOL: int, LANG: str, APP_SID: str, requ
 
 
 @router.post("/index", response_class=HTMLResponse)
-async def index_post(DOMAIN: str, PROTOCOL: int, LANG: str, APP_SID: str, request: Request):
-    auth_dict = await request.json()
-
+async def index_post(DOMAIN: str, PROTOCOL: int, LANG: str, APP_SID: str, request: Request, body: Union[dict, None] = Depends(decode_body_request)):
+    auth_dict = body
+    
     log(LogMessage(
         time=None,
         heder="Init.",
